@@ -82,7 +82,7 @@ def calculate():
                 summation += (MWi * vhead * Pi) / (R * temp * cmpds[selected]['H0'] * mLnought)
                 print(i)
             print(summation)
-            wtfrac = 1 / (recorded_dict.get(selected) * ((1 / cmpds[selected]['H0']) - summation + (vhead * cmpds[selected]['MW']) / R * temp * mLnought))
+            wtfrac = 1 / (recorded_dict.get(selected) * ((1 / cmpds[selected]['H0']) - summation + (vhead * cmpds[selected]['MW']) / (R * temp * mLnought)))
 
     sorted_dict = dict(sorted(recorded_dict.items()))
 
