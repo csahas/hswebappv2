@@ -14,36 +14,25 @@
     </div>
     <div id="content">
         <h1>VLE Calculator</h1>
-        <form action="{{ url_for('record') }}" method="POST" id="pressure_entry">
-            {{ recorder.csrf_token }}
-            Choose a compound to edit Pi:
-            <br>
-            {{ recorder.toRecord(size="11") }}
-            <br> <br>
-            {{ recorder.Pi.label }}
-            {{ recorder.Pi }} atm
-            <br> <br>
-            {{ recorder.record }}
-        </form>
-        <table id="pressure_table">
+        <table id="input_table">
             <tr>
                 <th>Compound </th>
-                <th>Pi (atm)</th>
+                <th>Pi (atm) </th>
+                <th>wi0</th>
             </tr>
+            {% for compound in compound_list %}
             <tr>
-            {% for key, value in sorted_dict.items() %}
-            <tr>
-                <td>{{ key }}</td>
-                <td>{{ value }}</td>
+                <td>{{ compound }}</td>
+                <td>
+                    <form action="{{ url_for('record') }}" method="POST" id={{ compound }}>
+                        {{ recorder[compound] }}
+                    </form>
+                </td>
+                <td>{{ wtfrac.get(compound) }}</td>
             </tr>
             {% endfor %}
-            </tr>
         </table>
-        <form action="{{ url_for('reset') }}" method="POST" id="reset">
-            {{ recorder.reset }}
-        </form>
         <br>
-        <hr class="solid">
         <br>
         <form action="{{ url_for('calculate') }}" method="POST" id="calculate">
             {{ runcalc.csrf_token }}
@@ -55,20 +44,14 @@
             <br> <br>
             {{ runcalc.temp.label }}
             {{ runcalc.temp }} (K)
-            <br> <br>
-            Choose a compound to run:
             <br>
-            {{ runcalc.torun }}
+            <br>
             {{ runcalc.run }}
             <br>
             <br>
-            <div id="result_box">
-                Result:
-                <br><br>
-                wi0 = {{ wtfrac }}
-                <br>
-                (wt frac {{ runcalc.torun.data }} / polyethylene)
-            </div>
+        </form>
+        <form action="{{ url_for('reset') }}" method="POST" id="reset">
+            {{ recorder.reset }}
         </form>
     </div>
     <br>

@@ -7,11 +7,23 @@ import json
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '2389dh01'
 
-compound_list = ['H2', 'C1', 'C2', 'C2H4', 'C3', 'C4', 'i-C4', 'C5', 'C6', 'C7', 'C8']
+compound_list = ['H2', 'C1', 'C2', 'C2H4', 'C3', 'C4', 'iC4', 'C5', 'C6', 'C7', 'C8']
 recorded_dict = {}
-wtfrac = 0.0
+wtfrac = {}
 
 class Recorder(FlaskForm):
+    H2 = FloatField(validators=[InputRequired()])
+    C1 = FloatField(validators=[InputRequired()])
+    C2 = FloatField(validators=[InputRequired()])
+    C2H4 = FloatField(validators=[InputRequired()])
+    C3 = FloatField(validators=[InputRequired()])
+    C4 = FloatField(validators=[InputRequired()])
+    iC4 = FloatField(validators=[InputRequired()])
+    C5 = FloatField(validators=[InputRequired()])
+    C6 = FloatField(validators=[InputRequired()])
+    C7 = FloatField(validators=[InputRequired()])
+    C8 = FloatField(validators=[InputRequired()])
+
     toRecord = SelectField('', choices=compound_list, validators=[InputRequired()])
     Pi = FloatField('Pi', validators=[InputRequired()])
     record = SubmitField('Record')
@@ -31,22 +43,22 @@ def index():
 
     sorted_dict = dict(sorted(recorded_dict.items()))
 
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac)
+    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
+                           compound_list=compound_list)
 
 @app.route('/record', methods=['POST'])
 def record():
     recorder = Recorder()
 
     if recorder.record.data and recorder.validate():
-        torecord_data = recorder.toRecord.data
-        Pi_data = recorder.Pi.data
-        recorded_dict.update({torecord_data: Pi_data})
+        recorded_dict.update({recorder.toRecord.data: recorder.Pi.data})
 
     sorted_dict = dict(sorted(recorded_dict.items()))
 
     runcalc = RunCalc()
 
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac)
+    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
+                           compound_list=compound_list)
 
 @app.route('/reset', methods=['POST'])
 def reset():
@@ -59,19 +71,20 @@ def reset():
 
     runcalc = RunCalc()
 
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac)
+    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
+                           compound_list=compound_list)
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
     recorder = Recorder()
     runcalc = RunCalc()
-    wtfrac = 0.0
 
     if runcalc.run.data and runcalc.validate():
         selected = runcalc.torun.data
         with open('compounds.json', 'r') as f:
             summation = 0
             cmpds = json.load(f)
+
             for i in recorded_dict.keys():
                 MWi = cmpds[str(i)]['MW']
                 Pi = recorded_dict.get(i)
@@ -80,11 +93,14 @@ def calculate():
                 temp = runcalc.temp.data
                 mLnought = runcalc.mL0.data
                 summation += (MWi * vhead * Pi) / (R * temp * cmpds[selected]['H0'] * mLnought)
-            wtfrac = 1 / (recorded_dict.get(selected) * ((1 / cmpds[selected]['H0']) - summation + (vhead * cmpds[selected]['MW']) / (R * temp * mLnought)))
+
+            result = 1 / (recorded_dict.get(selected) * ((1 / cmpds[selected]['H0']) - summation + (vhead * cmpds[selected]['MW']) / (R * temp * mLnought)))
+            wtfrac.update({selected: result})
 
     sorted_dict = dict(sorted(recorded_dict.items()))
 
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac)
+    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
+                           compound_list=compound_list)
 
 if __name__ == '__main__':
     app.run(debug=True)
