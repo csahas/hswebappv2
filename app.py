@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 from flask_wtf import FlaskForm
 from wtforms import SelectField, FloatField, SubmitField
 from wtforms.validators import InputRequired
@@ -11,96 +11,70 @@ compound_list = ['H2', 'C1', 'C2', 'C2H4', 'C3', 'C4', 'iC4', 'C5', 'C6', 'C7', 
 recorded_dict = {}
 wtfrac = {}
 
-class Recorder(FlaskForm):
-    H2 = FloatField(validators=[InputRequired()])
-    C1 = FloatField(validators=[InputRequired()])
-    C2 = FloatField(validators=[InputRequired()])
-    C2H4 = FloatField(validators=[InputRequired()])
-    C3 = FloatField(validators=[InputRequired()])
-    C4 = FloatField(validators=[InputRequired()])
-    iC4 = FloatField(validators=[InputRequired()])
-    C5 = FloatField(validators=[InputRequired()])
-    C6 = FloatField(validators=[InputRequired()])
-    C7 = FloatField(validators=[InputRequired()])
-    C8 = FloatField(validators=[InputRequired()])
+class Calculator(FlaskForm):
+    H2 = FloatField('H2', validators=[InputRequired()])
+    C1 = FloatField('C1', validators=[InputRequired()])
+    C2 = FloatField('C2', validators=[InputRequired()])
+    C2H4 = FloatField('C2H4', validators=[InputRequired()])
+    C3 = FloatField('C3', validators=[InputRequired()])
+    C4 = FloatField('C4', validators=[InputRequired()])
+    iC4 = FloatField('iC4', validators=[InputRequired()])
+    C5 = FloatField('C5', validators=[InputRequired()])
+    C6 = FloatField('C6', validators=[InputRequired()])
+    C7 = FloatField('C7', validators=[InputRequired()])
+    C8 = FloatField('C8', validators=[InputRequired()])
 
-    toRecord = SelectField('', choices=compound_list, validators=[InputRequired()])
-    Pi = FloatField('Pi', validators=[InputRequired()])
-    record = SubmitField('Record')
-    reset = SubmitField('Reset')
-
-class RunCalc(FlaskForm):
     vhead = FloatField('Vhead', validators=[InputRequired()])
     mL0 = FloatField('mL0', validators=[InputRequired()])
     temp = FloatField('Temperature', validators=[InputRequired()])
-    torun = SelectField('', choices=recorded_dict.keys(), validators=[InputRequired()])
+
     run = SubmitField('Run')
+    reset = SubmitField('Reset')
 
 @app.route('/')
 def index():
-    recorder = Recorder()
-    runcalc = RunCalc()
+    calculator = Calculator()
 
-    sorted_dict = dict(sorted(recorded_dict.items()))
-
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
-                           compound_list=compound_list)
-
-@app.route('/record', methods=['POST'])
-def record():
-    recorder = Recorder()
-
-    if recorder.record.data and recorder.validate():
-        recorded_dict.update({recorder.toRecord.data: recorder.Pi.data})
-
-    sorted_dict = dict(sorted(recorded_dict.items()))
-
-    runcalc = RunCalc()
-
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
-                           compound_list=compound_list)
-
-@app.route('/reset', methods=['POST'])
-def reset():
-    recorder = Recorder()
-
-    if recorder.reset.data:
-        recorded_dict.clear()
-
-    sorted_dict = dict(sorted(recorded_dict.items()))
-
-    runcalc = RunCalc()
-
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
-                           compound_list=compound_list)
+    return render_template('index.html', calculator=calculator, wtfrac=wtfrac, compound_list=compound_list)
 
 @app.route('/calculate', methods=['POST'])
 def calculate():
-    recorder = Recorder()
-    runcalc = RunCalc()
+    calculator = Calculator()
 
-    if runcalc.run.data and runcalc.validate():
-        selected = runcalc.torun.data
+    if calculator.run.data:
         with open('compounds.json', 'r') as f:
             summation = 0
             cmpds = json.load(f)
 
-            for i in recorded_dict.keys():
-                MWi = cmpds[str(i)]['MW']
-                Pi = recorded_dict.get(i)
-                vhead = runcalc.vhead.data
+            # do summation
+            for compound in compound_list:
+                MWi = cmpds[str(compound)]['MW']
+                vhead = calculator.vhead.data
+                Pi = calculator[compound].data
                 R = 0.08206 # L atm / mol K
-                temp = runcalc.temp.data
-                mLnought = runcalc.mL0.data
-                summation += (MWi * vhead * Pi) / (R * temp * cmpds[selected]['H0'] * mLnought)
+                temp = calculator.temp.data
+                mLnought = calculator.mL0.data
+                summation += MWi * vhead * Pi
 
-            result = 1 / (recorded_dict.get(selected) * ((1 / cmpds[selected]['H0']) - summation + (vhead * cmpds[selected]['MW']) / (R * temp * mLnought)))
-            wtfrac.update({selected: result})
+            # do wt frac calculation
+            for compound in compound_list:
+                H0 = cmpds[compound]['H0']
+                local_summation = summation / (R * temp * H0 * mLnought)
+                try:
+                    result = 1 / (calculator[compound].data * ((1 / H0) - local_summation + (vhead * cmpds[compound]['MW']) / (R * temp * mLnought)))
+                except ZeroDivisionError:
+                    result = 0
+                wtfrac.update({compound: result})
 
-    sorted_dict = dict(sorted(recorded_dict.items()))
+    return render_template('index.html', calculator=calculator, wtfrac=wtfrac, compound_list=compound_list)
 
-    return render_template('index.html', recorder=recorder, runcalc=runcalc, sorted_dict=sorted_dict, wtfrac=wtfrac,
-                           compound_list=compound_list)
+@app.route('/reset', methods=['POST'])
+def reset():
+    calculator = Calculator()
+
+    if calculator.reset.data:
+        wtfrac.clear()
+        return render_template('index.html', calculator=calculator, wtfrac=wtfrac, compound_list=compound_list)
 
 if __name__ == '__main__':
     app.run(debug=True)

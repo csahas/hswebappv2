@@ -14,44 +14,39 @@
     </div>
     <div id="content">
         <h1>VLE Calculator</h1>
-        <table id="input_table">
-            <tr>
-                <th>Compound </th>
-                <th>Pi (atm) </th>
-                <th>wi0</th>
-            </tr>
-            {% for compound in compound_list %}
-            <tr>
-                <td>{{ compound }}</td>
-                <td>
-                    <form action="{{ url_for('record') }}" method="POST" id={{ compound }}>
-                        {{ recorder[compound] }}
-                    </form>
-                </td>
-                <td>{{ wtfrac.get(compound) }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        <br>
-        <br>
-        <form action="{{ url_for('calculate') }}" method="POST" id="calculate">
-            {{ runcalc.csrf_token }}
-            {{ runcalc.vhead.label }}
-            {{ runcalc.vhead }} (L)
+        <form action="{{ url_for('calculate') }}" method="POST" id={{ compound }}>
+            <table id="input_table">
+                <tr>
+                    <th>Compound </th>
+                    <th>Pi (atm) </th>
+                    <th>wi0</th>
+                </tr>
+                {% for compound in compound_list %}
+                <tr>
+                    <td>{{ compound }}</td>
+                    <td>{{ calculator[compound] }}</td>
+                    <td>{{ wtfrac.get(compound) }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {{ calculator.csrf_token }}
+            <br>
+            {{ calculator.vhead.label }}
+            {{ calculator.vhead }} (L)
             <br> <br>
-            {{ runcalc.mL0.label }}
-            {{ runcalc.mL0 }} (kg)
+            {{ calculator.mL0.label }}
+            {{ calculator.mL0 }} (kg)
             <br> <br>
-            {{ runcalc.temp.label }}
-            {{ runcalc.temp }} (K)
+            {{ calculator.temp.label }}
+            {{ calculator.temp }} (K)
             <br>
             <br>
-            {{ runcalc.run }}
+            {{ calculator.run }}
             <br>
             <br>
         </form>
         <form action="{{ url_for('reset') }}" method="POST" id="reset">
-            {{ recorder.reset }}
+            {{ calculator.reset }}
         </form>
     </div>
     <br>
