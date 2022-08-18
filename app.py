@@ -62,10 +62,12 @@ def calculate():
                 local_summation = summation / (R * temp * H0 * mLnought)
                 try:
                     result = 1 / (calculator[compound].data * ((1 / H0) - local_summation + (vhead * cmpds[compound]['MW']) / (R * temp * mLnought)))
+                    rounded_result = round(result, 5)
                 except ZeroDivisionError:
-                    result = 0
-                wtfrac.update({compound: result})
+                    rounded_result = 0
+                wtfrac.update({compound: rounded_result})
 
+    print(sum(wtfrac.values()))
     return render_template('index.html', calculator=calculator, wtfrac=wtfrac, compound_list=compound_list)
 
 @app.route('/reset', methods=['POST'])
